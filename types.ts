@@ -8,6 +8,7 @@ export interface BandConfig {
   minRank: number;
   maxRank: number;
   ratio: number; // Percentage of total questions allocated to this band (0.0 - 1.0)
+  sparsityFactor: number; // Damping factor for sparse knowledge in high bands (0.0 - 1.0)
 }
 
 export interface TestMode {

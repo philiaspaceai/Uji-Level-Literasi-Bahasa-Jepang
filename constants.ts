@@ -2,16 +2,17 @@ import { BandConfig, TestMode } from './types';
 
 // Refactored Bands to use Ratios instead of fixed sample sizes.
 // This allows the test to scale to 100, 200, or 500 questions while maintaining distribution.
+// Added sparsityFactor to reduce inflation in high-rank bands (Swiss Cheese Effect).
 
 export const BANDS: BandConfig[] = [
-  { id: 1, minRank: 1, maxRank: 1000, ratio: 0.10 },       // 10% - Core
-  { id: 2, minRank: 1001, maxRank: 3000, ratio: 0.15 },    // 15% - Basic
-  { id: 3, minRank: 3001, maxRank: 9000, ratio: 0.20 },    // 20% - Intermediate
-  { id: 4, minRank: 9001, maxRank: 20000, ratio: 0.20 },   // 20% - Advanced
-  { id: 5, minRank: 20001, maxRank: 40000, ratio: 0.15 },  // 15% - Native
-  { id: 6, minRank: 40001, maxRank: 70000, ratio: 0.10 },  // 10% - Highly Educated
-  { id: 7, minRank: 70001, maxRank: 100000, ratio: 0.05 }, // 5% - Specialist
-  { id: 8, minRank: 100001, maxRank: 150000, ratio: 0.05 } // 5% - Ultra Rare
+  { id: 1, minRank: 1, maxRank: 1000, ratio: 0.10, sparsityFactor: 1.0 },       // 10% - Core (Solid)
+  { id: 2, minRank: 1001, maxRank: 3000, ratio: 0.15, sparsityFactor: 1.0 },    // 15% - Basic (Solid)
+  { id: 3, minRank: 3001, maxRank: 9000, ratio: 0.20, sparsityFactor: 1.0 },    // 20% - Intermediate (Solid)
+  { id: 4, minRank: 9001, maxRank: 20000, ratio: 0.20, sparsityFactor: 1.0 },   // 20% - Advanced (Solid)
+  { id: 5, minRank: 20001, maxRank: 40000, ratio: 0.15, sparsityFactor: 0.7 },  // 15% - Native (Start of sparsity)
+  { id: 6, minRank: 40001, maxRank: 70000, ratio: 0.10, sparsityFactor: 0.5 },  // 10% - Highly Educated (Sparse)
+  { id: 7, minRank: 70001, maxRank: 100000, ratio: 0.05, sparsityFactor: 0.3 }, // 5% - Specialist (Very Sparse)
+  { id: 8, minRank: 100001, maxRank: 150000, ratio: 0.05, sparsityFactor: 0.1 } // 5% - Ultra Rare (Extremely Sparse)
 ];
 
 export const TEST_MODES: TestMode[] = [

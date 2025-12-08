@@ -61,10 +61,11 @@ export async function prepareTestSession(totalQuestions: number): Promise<{
   BANDS.forEach(band => {
     const targetCount = Math.round(totalQuestions * band.ratio);
     
-    // For Band 1-2 (Basic), we take exact amount.
-    // For Band 3+ (Intermediate+), we take 4x buffer to filter for Jukugo.
-    const multiplier = band.id >= 3 ? 4 : 1; 
-    const countToFetch = targetCount * multiplier;
+    // Modified: Increase buffer for all bands.
+    // Band 1-2: 2x (to allow deduping if duplicates found)
+    // Band 3+: 4x (to allow Jukugo filtering)
+    const multiplier = band.id >= 3 ? 4 : 2; 
+    const countToFetch = Math.ceil(targetCount * multiplier);
     
     const range = band.maxRank - band.minRank + 1;
     const usedIndices = new Set<number>();
@@ -91,6 +92,7 @@ export async function prepareTestSession(totalQuestions: number): Promise<{
 
   // 3. Filter and Assemble Final Queue
   let finalQueue: { id: number, bandId: number }[] = [];
+  const addedWordStrings = new Set<string>(); // Track unique word strings to prevent duplicates
 
   // Regex for "Jukugo" (Compound Words): Contains 2 or more consecutive Kanji
   // Unicode Range for CJK Unified Ideographs: \u4e00-\u9faf
@@ -106,29 +108,37 @@ export async function prepareTestSession(totalQuestions: number): Promise<{
 
     let selectedForBand: { id: number, bandId: number }[] = [];
 
+    // Helper to add unique words only
+    const addUnique = (list: typeof bandCandidates, limit: number) => {
+        for (const candidate of list) {
+            if (selectedForBand.length >= limit) break;
+            
+            // Skip if word string is missing OR already used in previous bands/current band
+            if (!candidate.wordStr || addedWordStrings.has(candidate.wordStr)) continue;
+            
+            selectedForBand.push(candidate.item);
+            addedWordStrings.add(candidate.wordStr);
+        }
+    };
+
     if (band.id <= 2) {
-      // Basic bands: Take first N (already random)
-      selectedForBand = bandCandidates.slice(0, targetCount).map(c => c.item);
+      // Basic bands: Shuffle and pick unique
+      const shuffled = shuffle(bandCandidates);
+      addUnique(shuffled, targetCount);
     } else {
       // Advanced bands: Prioritize Jukugo
-      // Split into Jukugo and Others
       const jukugoWords = bandCandidates.filter(c => c.wordStr && jukugoRegex.test(c.wordStr));
       const otherWords = bandCandidates.filter(c => !c.wordStr || !jukugoRegex.test(c.wordStr));
       
-      // Shuffle jukugo words to ensure variety within the buffer
       const shuffledJukugo = shuffle(jukugoWords);
+      const shuffledOthers = shuffle(otherWords);
       
-      // Try to fill quota with Jukugo
-      selectedForBand = shuffledJukugo.slice(0, targetCount).map(c => c.item);
+      // Try to fill quota with Jukugo first
+      addUnique(shuffledJukugo, targetCount);
       
-      // If not enough Jukugo, fill with others
+      // If not enough, fill with others
       if (selectedForBand.length < targetCount) {
-        const remainingNeeded = targetCount - selectedForBand.length;
-        const shuffledOthers = shuffle(otherWords);
-        selectedForBand = [
-            ...selectedForBand, 
-            ...shuffledOthers.slice(0, remainingNeeded).map(c => c.item)
-        ];
+        addUnique(shuffledOthers, targetCount);
       }
     }
     
@@ -202,7 +212,7 @@ export function calculateTestResult(
     return stat;
   });
 
-  // 3. Volatility Damping
+  // 3. Volatility Damping (Short Tests)
   let volatilityDamping = 1.0;
   if (totalQuestions <= 100) {
     volatilityDamping = 0.6; 
@@ -214,11 +224,20 @@ export function calculateTestResult(
   const details = stats.map((stat) => {
     const bandConfig = BANDS.find(b => b.id === stat.bandId)!;
     const bandSize = bandConfig.maxRank - bandConfig.minRank + 1;
+    
     let finalRatio = stat.ratio;
+    
+    // Apply Volatility Damping for advanced bands if test is short
     if (stat.bandId >= 4) {
       finalRatio = finalRatio * volatilityDamping;
     }
-    let predictedInBand = Math.round(finalRatio * bandSize);
+
+    // Apply Sparsity Damping (New Logic)
+    // Even if ratio is 1.0 (100% correct), we discount the effective population size for high bands
+    // because knowledge is sparse ("Swiss Cheese Effect").
+    const effectiveBandSize = bandSize * bandConfig.sparsityFactor;
+
+    let predictedInBand = Math.round(finalRatio * effectiveBandSize);
     totalPredicted += predictedInBand;
 
     return {

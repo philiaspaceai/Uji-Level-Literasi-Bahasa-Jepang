@@ -22,10 +22,18 @@ export const RadarChart: React.FC<RadarChartProps> = ({ stats }) => {
   ];
 
   // Helper to calculate coordinates
+  // Reverted to Linear Scaling as requested.
   const getCoordinates = (value: number, index: number, maxRadius: number) => {
     const angle = (Math.PI * 2 * index) / axes.length - Math.PI / 2;
-    // Map value 0-100 to radius. Ensure a tiny minimum visual (5) so it's not invisible.
-    const r = (Math.max(5, value) / 100) * maxRadius;
+    
+    // LINEAR SCALING: 25% value = 25% radius position.
+    // Accurate representation without visual inflation.
+    const normalizedValue = Math.min(100, Math.max(0, value));
+    const scaleFactor = normalizedValue / 100; 
+    
+    // Ensure a tiny minimum visual (5% radius) just so it's not a single invisible pixel point
+    const r = (Math.max(0.05, scaleFactor)) * maxRadius;
+    
     const x = center + Math.cos(angle) * r;
     const y = center + Math.sin(angle) * r;
     return { x, y };
