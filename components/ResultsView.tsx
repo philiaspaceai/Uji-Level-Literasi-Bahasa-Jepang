@@ -1,7 +1,7 @@
 
+
 import React from 'react';
 import { TestResult } from '../types';
-import { RadarChart } from './RadarChart';
 
 interface ResultsViewProps {
   result: TestResult;
@@ -72,19 +72,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
 
         <h2 className="text-slate-400 text-sm uppercase tracking-widest mb-4 relative z-10">Hasil Tes Kemampuan Membaca</h2>
         
-        <div className="relative mb-8 z-10">
+        <div className="relative mb-12 z-10">
             <div className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 drop-shadow-sm">
             {result.totalPredicted.toLocaleString()}
             </div>
             <div className="text-xl text-slate-400 font-medium -mt-2">Kosakata Terbaca</div>
         </div>
         
-        {/* RADAR CHART (PENTAGON STATS) */}
-        <div className="mb-10 relative z-10 flex flex-col items-center">
-            <h3 className="text-slate-400 text-xs uppercase tracking-widest mb-4">Profil Kompetensi</h3>
-            <RadarChart stats={result.radarStats} />
-        </div>
-
         <div className="bg-slate-900/60 rounded-2xl p-6 mb-10 border border-slate-700/50 relative z-10">
              <div className="text-slate-400 text-xs uppercase mb-2 tracking-widest">Tingkat Literasi</div>
              <div className="text-lg md:text-xl font-medium text-emerald-100 italic">

@@ -1,4 +1,3 @@
-
 export interface Word {
   id: number;
   word: string;
@@ -22,11 +21,11 @@ export interface TestMode {
 }
 
 export interface RadarStats {
-  survival: number;   // Band 1-2
-  formal: number;     // Band 3-4
-  culture: number;    // Band 5-6
-  literary: number;   // Band 7-8
-  complexity: number; // Jukugo Accuracy
+  survival: number;
+  formal: number;
+  culture: number;
+  literary: number;
+  complexity: number;
 }
 
 export interface TestResult {
@@ -35,7 +34,6 @@ export interface TestResult {
   cefrLevel: string;
   ageEquivalent: string;
   literacyDescription: string;
-  radarStats: RadarStats;
   details: {
     bandId: number;
     totalInBand: number;

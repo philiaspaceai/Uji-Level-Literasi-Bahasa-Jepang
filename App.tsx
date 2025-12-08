@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { AppState, TestResult, Word } from './types';
 import { prepareTestSession, calculateTestResult } from './services/vocabService';
@@ -73,8 +75,8 @@ export default function App() {
     setIsTransitioning(true);
     
     // Calculate result while fading out
-    // Pass selectedTotalQuestions AND wordMap to enable Volatility Damping and Jukugo Analysis
-    const res = calculateTestResult(knownIds, testQueue, selectedTotalQuestions, wordMap);
+    // No longer passing wordMap since Radar Chart is removed
+    const res = calculateTestResult(knownIds, testQueue, selectedTotalQuestions);
     setResult(res);
 
     setTimeout(() => {

@@ -1,6 +1,7 @@
 
+
 import { API_KEY, API_URL, BANDS, CEFR_LEVELS, JLPT_LEVELS, AGE_EQUIVALENTS, LITERACY_DESCRIPTIONS } from '../constants';
-import { Word, TestResult, RadarStats } from '../types';
+import { Word, TestResult } from '../types';
 
 // Helper to shuffle array
 function shuffle<T>(array: T[]): T[] {
@@ -155,8 +156,7 @@ export async function prepareTestSession(totalQuestions: number): Promise<{
 export function calculateTestResult(
   knownIds: Set<number>, 
   allTestItems: { id: number, bandId: number }[], 
-  totalQuestions: number,
-  wordMap: Map<number, Word>
+  totalQuestions: number
 ): TestResult {
   let totalPredicted = 0;
   
@@ -223,38 +223,7 @@ export function calculateTestResult(
     };
   });
 
-  // 5. Radar Chart Stats Calculation
-  // Helper to safely get accuracy of a band range
-  const getAcc = (startBand: number, endBand: number) => {
-    const targetStats = stats.filter(s => s.bandId >= startBand && s.bandId <= endBand);
-    const totalKnown = targetStats.reduce((sum, s) => sum + s.known, 0);
-    const totalQuestions = targetStats.reduce((sum, s) => sum + s.total, 0);
-    if (totalQuestions === 0) return 0;
-    return (totalKnown / totalQuestions) * 100;
-  };
-
-  // Complexity Calculation (Jukugo Accuracy)
-  const jukugoRegex = /[\u4e00-\u9faf]{2,}/;
-  const allTestedWords = allTestItems.map(item => ({ 
-    ...item, 
-    word: wordMap.get(item.id)?.word || '' 
-  })).filter(w => w.word !== '');
-
-  const jukugoItems = allTestedWords.filter(w => jukugoRegex.test(w.word));
-  const knownJukugoCount = jukugoItems.filter(w => knownIds.has(w.id)).length;
-  const complexityScore = jukugoItems.length > 0 
-    ? (knownJukugoCount / jukugoItems.length) * 100 
-    : 0;
-
-  const radarStats: RadarStats = {
-    survival: getAcc(1, 2),    // Band 1-2
-    formal: getAcc(3, 4),      // Band 3-4
-    culture: getAcc(5, 6),     // Band 5-6
-    literary: getAcc(7, 8),    // Band 7-8
-    complexity: complexityScore
-  };
-
-  // 6. Select Descriptions (Simplified: No Learner Type)
+  // 5. Select Descriptions (Simplified: No Learner Type)
   const jlpt = JLPT_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Belum N5';
   const cefr = CEFR_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Pre-A1';
   const age = AGE_EQUIVALENTS.slice().reverse().find(l => totalPredicted >= l.threshold)?.age || 'Balita';
@@ -266,7 +235,6 @@ export function calculateTestResult(
     cefrLevel: cefr,
     ageEquivalent: age,
     literacyDescription: literacy,
-    radarStats,
     details
   };
 }

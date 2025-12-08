@@ -8,12 +8,8 @@ Dibuat menggunakan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
 
 - **Jukugo Filter**: Algoritma cerdas yang memprioritaskan kata majemuk Kanji (Jukugo) di level tinggi untuk meminimalisir tebakan fonetik.
 - **Guillotine Scoring**: Sistem penilaian ketat yang menghentikan perhitungan level tinggi jika fondasi level menengah tidak kuat.
-- **Learner Type Detection**: Mendeteksi tipe belajar user:
-  - 📘 **Academic**: Belajar terstruktur lewat buku teks.
-  - 🎧 **Intuitive**: Belajar alami lewat Anime/Manga/Game.
-  - ⚖️ **Balanced**: Menguasai keduanya.
-- **Radar Chart**: Visualisasi kompetensi dalam 5 sumbu (Survival, Formal, Culture, Literary, Complexity).
 - **3 Mode Tes**: Cepat (100 kata), Standar (200 kata), Akurat (500 kata).
+- **Responsive UI**: Tampilan Dark Mode yang indah dengan animasi halus.
 
 ## 🚀 Cara Menjalankan (Local)
 
