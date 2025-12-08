@@ -1,3 +1,4 @@
+
 import { BandConfig, TestMode } from './types';
 
 // Refactored Bands to use Ratios instead of fixed sample sizes.
@@ -86,9 +87,8 @@ export const AGE_EQUIVALENTS = [
   { threshold: 60000, age: 'Kamus Berjalan' },
 ];
 
-// MATRIX LITERACY DESCRIPTIONS
-export const LITERACY_DESCRIPTIONS = {
-  general: [
+// MATRIX LITERACY DESCRIPTIONS - SIMPLIFIED TO SINGLE LIST
+export const LITERACY_DESCRIPTIONS = [
     { threshold: 0, desc: 'Butuh bantuan visual untuk mengerti.' },
     { threshold: 800, desc: 'Bisa membaca kalimat sederhana & hiragana/katakana.' },
     { threshold: 3500, desc: 'Bisa membaca Manga shonen (dengan furigana).' },
@@ -96,23 +96,4 @@ export const LITERACY_DESCRIPTIONS = {
     { threshold: 11000, desc: 'Bisa membaca Light Novel & Koran umum.' },
     { threshold: 20000, desc: 'Bisa membaca Novel Sastra & Jurnal Berita.' },
     { threshold: 35000, desc: 'Bisa membaca Makalah Akademik & Literatur Klasik.' },
-  ],
-  academic: [
-    { threshold: 0, desc: 'Butuh bimbingan dasar pengenalan huruf.' },
-    { threshold: 800, desc: 'Bisa membaca soal latihan JLPT N5 & kalimat buku teks dasar.' },
-    { threshold: 3500, desc: 'Bisa membaca soal latihan JLPT N4 & teks buku harian sederhana.' },
-    { threshold: 6500, desc: 'Bisa membaca materi ujian N3, cerpen formal, & pengumuman stasiun.' },
-    { threshold: 11000, desc: 'Bisa membaca editorial koran, esai akademik, & materi kuliah dasar.' },
-    { threshold: 20000, desc: 'Bisa membaca jurnal penelitian & dokumen hukum resmi.' },
-    { threshold: 35000, desc: 'Bisa membaca literatur klasik & naskah kuno.' },
-  ],
-  intuitive: [
-    { threshold: 0, desc: 'Mengenali karakter visual tertentu tapi belum bisa membaca.' },
-    { threshold: 800, desc: 'Bisa mengenali judul Anime & menu game RPG sederhana.' },
-    { threshold: 3500, desc: 'Bisa membaca dialog Manga simpel & caption Instagram/Twitter.' },
-    { threshold: 6500, desc: 'Bisa membaca Manga Shonen (tanpa furigana) & lirik lagu Pop.' },
-    { threshold: 11000, desc: 'Bisa membaca Light Novel Isekai, Visual Novel, & utas Twitter Jepang.' },
-    { threshold: 20000, desc: 'Bisa membaca Web Novel fantasi berat & lore dalam Game.' },
-    { threshold: 35000, desc: 'Bisa membaca Novel Misteri kompleks & Sastra Modern.' },
-  ]
-};
+];

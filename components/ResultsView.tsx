@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { TestResult, LearnerType } from '../types';
+import { TestResult } from '../types';
 import { RadarChart } from './RadarChart';
 
 interface ResultsViewProps {
@@ -25,51 +26,6 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
     );
   };
 
-  const getLearnerTypeConfig = (type: LearnerType) => {
-    switch (type) {
-        case 'ACADEMIC':
-            return {
-                label: 'Textbook Learner (Akademis)',
-                color: 'text-blue-400',
-                bg: 'bg-blue-500/10',
-                border: 'border-blue-500/20',
-                icon: (
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                )
-            };
-        case 'IMMERSION':
-            return {
-                label: 'Intuitive Learner (Tipe Intuitif)',
-                color: 'text-purple-400',
-                bg: 'bg-purple-500/10',
-                border: 'border-purple-500/20',
-                icon: (
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                )
-            };
-        case 'BALANCED':
-            return {
-                label: 'Balanced Master',
-                color: 'text-emerald-400',
-                bg: 'bg-emerald-500/10',
-                border: 'border-emerald-500/20',
-                icon: (
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                )
-            };
-        default:
-            return {
-                label: 'Pemula',
-                color: 'text-slate-400',
-                bg: 'bg-slate-500/10',
-                border: 'border-slate-500/20',
-                icon: (
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path></svg>
-                )
-            };
-    }
-  };
-
   // Generate detailed analysis text based on score and bands
   const getAnalysisReport = () => {
     const score = result.totalPredicted;
@@ -80,34 +36,19 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
     let practical = "";
     let advice = "";
 
-    // BASE LEVEL ANALYSIS (Generic fallback, mostly overwritten by Learner Type Logic)
+    // STANDARD LEVEL ANALYSIS
     if (score < 1500) {
       summary = "Anda berada di tahap awal. Fokus utama Anda saat ini masih pada pengenalan bentuk visual kata dan karakter dasar.";
       practical = "Bisa mengenali kata-kata salam & angka, namun teks panjang masih sulit.";
       advice = "Prioritas: Kuasai Hiragana dan Katakana sepenuhnya. Hafalkan 100 Kanji dasar.";
     } else if (score < 8000) {
-      summary = "Anda berada di level menengah (Intermediate). Anda sudah bukan pemula, tapi belum sepenuhnya lancar.";
+      summary = "Anda berada di level menengah (Intermediate). Anda sudah bukan pemula, tapi belum sepenuhnya lancar membaca teks kompleks.";
       practical = "Bisa memahami pesan sehari-hari, namun berita standar masih berat.";
-      advice = "Perbanyak input membaca tanpa kamus (Extensive Reading).";
+      advice = "Perbanyak input membaca tanpa kamus (Extensive Reading) dan perkuat Jukugo.";
     } else {
       summary = "Kemampuan literasi Anda kuat. Anda sudah dikategorikan sebagai pembaca mandiri.";
       practical = "Hampir semua media hiburan terbuka untuk Anda.";
-      advice = "Tantang diri Anda dengan materi teknis atau sastra.";
-    }
-
-    // LEARNER TYPE SPECIFIC ANALYSIS
-    if (result.learnerType === 'BALANCED') {
-        summary = "Sempurna. Kami mendeteksi profil 'Balanced Master'. Anda menggabungkan disiplin belajar formal dengan kekayaan input media asli. Tidak ada celah berarti dalam literasi Anda.";
-        practical = "Anda bisa beradaptasi dengan segala jenis teks, baik itu dokumen kaku pemerintah maupun slang liar di internet.";
-        advice = "Anda sudah di level elite. Tantangan Anda berikutnya adalah output (Writing/Speaking) atau bidang spesialis (Hukum/Medis).";
-    } else if (result.learnerType === 'IMMERSION') {
-        summary = "Kami mendeteksi pola 'Intuitif' (Intuitive Learner). Anda mengenali banyak kosakata sulit yang sering muncul di Anime/Game/Novel, meskipun mungkin melewatkan beberapa kata formal.";
-        practical = "Anda sangat nyaman dengan media hiburan (Manga/Game) dan bahasa lisan yang dituliskan. Namun, dokumen formal mungkin terasa membosankan atau membingungkan bagi Anda.";
-        advice = "Sebagai tipe 'Intuitif', intuisi bahasa Anda sangat tajam. Untuk menyeimbangkan kemampuan, cobalah pelajari tata bahasa formal (Keigo) dan Kanji standar agar bahasa Jepang Anda tidak terdengar terlalu kasual di situasi serius.";
-    } else if (result.learnerType === 'ACADEMIC') {
-        summary = "Kami mendeteksi pola 'Akademis' (Textbook Learner). Pengetahuan Anda sangat terstruktur sesuai kurikulum buku teks, namun menurun drastis pada kosakata di luar materi pelajaran.";
-        practical = "Anda sangat jago mengerjakan soal ujian dan membaca teks standar buku pelajaran. Namun, Anda mungkin kaget saat membaca bahasa Jepang 'asli' di Twitter atau Novel yang penuh idiom tidak baku.";
-        advice = "Sebagai tipe 'Akademis', fondasi Anda sangat kokoh. Untuk melompat ke level berikutnya, tinggalkan buku teks sejenak. Cobalah 'tenggelam' dalam media asli (Novel, Twitter Jepang, Berita) untuk menangkap kosakata liar yang jarang diajarkan di kelas.";
+      advice = "Tantang diri Anda dengan materi teknis, sastra, atau editorial koran.";
     }
 
     // Weakness Check (Foundation)
@@ -120,7 +61,6 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
   };
 
   const report = getAnalysisReport();
-  const learnerConfig = getLearnerTypeConfig(result.learnerType);
 
   return (
     <div className="w-full max-w-3xl mx-auto text-center px-4 py-8 animate-fade-in-up">
@@ -138,14 +78,6 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
             </div>
             <div className="text-xl text-slate-400 font-medium -mt-2">Kosakata Terbaca</div>
         </div>
-
-        {/* LEARNER TYPE BADGE */}
-        {result.learnerType !== 'BEGINNER' && (
-             <div className={`inline-flex items-center px-4 py-2 rounded-full border mb-8 ${learnerConfig.bg} ${learnerConfig.border} ${learnerConfig.color} relative z-10`}>
-                 {learnerConfig.icon}
-                 <span className="font-bold text-sm tracking-wide">{learnerConfig.label}</span>
-             </div>
-        )}
         
         {/* RADAR CHART (PENTAGON STATS) */}
         <div className="mb-10 relative z-10 flex flex-col items-center">

@@ -1,5 +1,6 @@
+
 import { API_KEY, API_URL, BANDS, CEFR_LEVELS, JLPT_LEVELS, AGE_EQUIVALENTS, LITERACY_DESCRIPTIONS } from '../constants';
-import { Word, TestResult, LearnerType, RadarStats } from '../types';
+import { Word, TestResult, RadarStats } from '../types';
 
 // Helper to shuffle array
 function shuffle<T>(array: T[]): T[] {
@@ -172,32 +173,6 @@ export function calculateTestResult(
     return { bandId: band.id, ratio, total: totalTested, known: knownCount };
   });
 
-  // 1.5 DETECT LEARNER TYPE (Use raw stats before cuts)
-  const foundationRatio = (stats[0].ratio + stats[1].ratio + stats[2].ratio + stats[3].ratio) / 4; // Band 1-4
-  const advancedRatio = (stats[4].ratio + stats[5].ratio + stats[6].ratio) / 3; // Band 5-7
-  
-  const scoreBand5 = stats[4].ratio; 
-  const scoreBand6 = stats[5].ratio; 
-  const scoreBand7 = stats[6].ratio; 
-
-  let learnerType: LearnerType = 'BEGINNER';
-  const passedBasics = stats[0].ratio > 0.5 && stats[1].ratio > 0.4; 
-
-  if (passedBasics) {
-      if (foundationRatio > 0.85 && advancedRatio > 0.50) {
-          learnerType = 'BALANCED';
-      }
-      else if (scoreBand6 > 0.15 || scoreBand7 > 0.05 || (scoreBand5 > 0.30)) {
-          learnerType = 'IMMERSION';
-      }
-      else if (advancedRatio / Math.max(0.1, foundationRatio) > 0.40) {
-          learnerType = 'IMMERSION';
-      }
-      else {
-          learnerType = 'ACADEMIC';
-      }
-  }
-
   // 2. "The Guillotine" Logic (Hard Cut-off)
   const FAILURE_THRESHOLD = 0.3; 
   let guillotineDropped = false;
@@ -279,17 +254,11 @@ export function calculateTestResult(
     complexity: complexityScore
   };
 
-  // 6. Select Descriptions
-  let literacySet = LITERACY_DESCRIPTIONS.general;
-  if (learnerType === 'ACADEMIC') literacySet = LITERACY_DESCRIPTIONS.academic;
-  else if (learnerType === 'IMMERSION') literacySet = LITERACY_DESCRIPTIONS.intuitive;
-  else if (learnerType === 'BALANCED') literacySet = LITERACY_DESCRIPTIONS.general; 
-  else literacySet = LITERACY_DESCRIPTIONS.general;
-
+  // 6. Select Descriptions (Simplified: No Learner Type)
   const jlpt = JLPT_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Belum N5';
   const cefr = CEFR_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Pre-A1';
   const age = AGE_EQUIVALENTS.slice().reverse().find(l => totalPredicted >= l.threshold)?.age || 'Balita';
-  const literacy = literacySet.slice().reverse().find(l => totalPredicted >= l.threshold)?.desc || 'Belum bisa membaca teks Jepang.';
+  const literacy = LITERACY_DESCRIPTIONS.slice().reverse().find(l => totalPredicted >= l.threshold)?.desc || 'Belum bisa membaca teks Jepang.';
 
   return {
     totalPredicted,
@@ -297,7 +266,6 @@ export function calculateTestResult(
     cefrLevel: cefr,
     ageEquivalent: age,
     literacyDescription: literacy,
-    learnerType,
     radarStats,
     details
   };

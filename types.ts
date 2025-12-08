@@ -1,3 +1,4 @@
+
 export interface Word {
   id: number;
   word: string;
@@ -20,8 +21,6 @@ export interface TestMode {
   icon: string;
 }
 
-export type LearnerType = 'ACADEMIC' | 'IMMERSION' | 'BALANCED' | 'BEGINNER';
-
 export interface RadarStats {
   survival: number;   // Band 1-2
   formal: number;     // Band 3-4
@@ -36,7 +35,6 @@ export interface TestResult {
   cefrLevel: string;
   ageEquivalent: string;
   literacyDescription: string;
-  learnerType: LearnerType;
   radarStats: RadarStats;
   details: {
     bandId: number;
