@@ -1,11 +1,55 @@
-<div align="center">
+# JP Kanji Literacy Test (Uji Literasi Jepang)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Aplikasi web interaktif untuk menguji estimasi jumlah kosakata (Vocabulary Size) bahasa Jepang, dengan fokus khusus pada **Kemampuan Membaca (Literasi)**.
 
-  <h1>Built with AI Studio</h2>
+Dibuat menggunakan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🌟 Fitur Utama
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+- **Jukugo Filter**: Algoritma cerdas yang memprioritaskan kata majemuk Kanji (Jukugo) di level tinggi untuk meminimalisir tebakan fonetik.
+- **Guillotine Scoring**: Sistem penilaian ketat yang menghentikan perhitungan level tinggi jika fondasi level menengah tidak kuat.
+- **Learner Type Detection**: Mendeteksi tipe belajar user:
+  - 📘 **Academic**: Belajar terstruktur lewat buku teks.
+  - 🎧 **Intuitive**: Belajar alami lewat Anime/Manga/Game.
+  - ⚖️ **Balanced**: Menguasai keduanya.
+- **Radar Chart**: Visualisasi kompetensi dalam 5 sumbu (Survival, Formal, Culture, Literary, Complexity).
+- **3 Mode Tes**: Cepat (100 kata), Standar (200 kata), Akurat (500 kata).
 
-</div>
+## 🚀 Cara Menjalankan (Local)
+
+1. **Clone repository ini**
+   ```bash
+   git clone https://github.com/username-anda/jp-vocab-test.git
+   cd jp-vocab-test
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Jalankan Server Development**
+   ```bash
+   npm run dev
+   ```
+   Buka `http://localhost:5173` di browser.
+
+## 📦 Cara Deploy ke Vercel
+
+1. Push kode ini ke repository GitHub Anda.
+2. Buka [Vercel](https://vercel.com) dan buat New Project.
+3. Import repository GitHub tadi.
+4. Vercel akan otomatis mendeteksi framework **Vite**.
+5. Klik **Deploy**.
+
+## 🛠 Teknologi
+
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS (via CDN untuk portabilitas tinggi)
+- **Icons**: SVG Heroicons
+- **Database**: Supabase (via REST API)
+
+## 📝 Kredit
+
+Dibuat oleh **Philia Space Community**.
