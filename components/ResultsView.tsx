@@ -57,27 +57,26 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
 
         <h2 className="text-slate-400 text-sm uppercase tracking-widest mb-6 relative z-10">Hasil Uji Komprehensif</h2>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 items-center">
             <div className="relative z-10 order-1">
                 <RadarChart data={jlptScores} />
             </div>
-            <div className="text-left relative z-10 order-2">
-                <div className="mb-8 lg:mb-0">
+            <div className="flex flex-col gap-6 order-2">
+                <div className="text-left relative z-10">
                     <div className="text-slate-400 text-sm font-medium mb-2">Prediksi Jangkauan Kosakata Optimal</div>
-                    <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 drop-shadow-sm">
+                    <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 drop-shadow-sm">
                         {prediction.lower} - {prediction.upper}
                     </div>
                 </div>
+                
+                <div className="text-left bg-slate-900/40 p-6 rounded-2xl border border-slate-700/50 relative z-10">
+                   <h3 className="text-emerald-400 font-bold text-base mb-3 flex items-center tracking-wide">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        Analisis Profil Kosakata
+                   </h3>
+                   <p className="text-slate-300 leading-relaxed text-sm md:text-base">{getJlptAnalysis(jlptScores)}</p>
+                </div>
             </div>
-        </div>
-
-
-        <div className="text-left mb-12 bg-slate-900/40 p-6 rounded-2xl border border-slate-700/50 relative z-10">
-           <h3 className="text-emerald-400 font-bold text-base mb-3 flex items-center tracking-wide">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                Analisis Profil Kosakata
-           </h3>
-           <p className="text-slate-300 leading-relaxed text-sm md:text-base">{getJlptAnalysis(jlptScores)}</p>
         </div>
 
         <div className="text-left relative z-10 mb-12">
@@ -86,7 +85,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
                 Peta Kepadatan Pengetahuan
            </h3>
            <div className="space-y-4">
-             {benchmark.densityStats.filter(b => b.total > 0).map((band) => (
+             {benchmark.densityStats.filter(b => b.total > 0).map((band, index) => (
                 <div key={band.bandId}>
                    <div className="flex justify-between items-center text-xs text-slate-400 mb-1 font-mono">
                       <span>RANK {band.startRank.toLocaleString()} - {band.endRank.toLocaleString()}</span>
@@ -99,7 +98,8 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
                         className="h-full rounded-sm bg-gradient-to-r from-emerald-600 to-teal-500 transition-all duration-1000" 
                         style={{ 
                             width: `${band.density}%`,
-                            opacity: 0.2 + (band.density/100 * 0.8)
+                            opacity: 0.2 + (band.density/100 * 0.8),
+                            transitionDelay: `${index * 100}ms`
                         }} 
                       />
                    </div>

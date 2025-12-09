@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { JlptScore } from '../types';
 
@@ -56,7 +57,9 @@ export const RadarChart: React.FC<RadarChartProps> = ({ data }) => {
 
   return (
     <div className="relative w-full max-w-xs mx-auto aspect-square">
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
+        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full" role="img" aria-labelledby="radar-chart-title">
+            <title id="radar-chart-title">Grafik Radar Skor JLPT</title>
+            <desc>Sebuah grafik radar yang menunjukkan skor penguasaan kosakata untuk setiap level JLPT dari N5 hingga N1.</desc>
             <g className="grid-lines">
                 {[0.25, 0.5, 0.75, 1.0].map(level => (
                     <polygon
