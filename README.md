@@ -4,12 +4,17 @@ Aplikasi web untuk mengukur jangkauan kosakata bahasa Jepang Anda berdasarkan fr
 
 Dibuat dengan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
 
-## 🌟 Fitur Inti
+## ✨ Live Demo
 
-- **Sistem Tes Bertahap Otomatis**: Tes secara cerdas menyesuaikan tingkat kesulitan dan berhenti secara otomatis ketika batas kemampuan Anda terdeteksi.
-- **Analisis Komprehensif**: Mengukur **Jangkauan Optimal** (estimasi total kosakata yang diketahui) dan **Peta Kepadatan Pengetahuan** Anda di berbagai level frekuensi.
-- **Analisis Profil JLPT**: Memberikan gambaran kekuatan kosakata Anda sesuai level JLPT (N5-N1) melalui visualisasi Radar Chart.
-- **Sumber Data Akademis**: Menggunakan data dari BCCWJ (Balanced Corpus of Contemporary Written Japanese) untuk kualitas data frekuensi yang valid.
+[Silakan masukkan link demo Vercel Anda di sini setelah deploy]
+
+## 🌟 Fitur Inti 
+
+-   **Estimasi Kosakata Paling Akurat**: Menggunakan sistem tes adaptif yang cerdas, didukung oleh data frekuensi kata dari Balanced Corpus of Contemporary Written Japanese (BCCWJ), untuk memberikan perkiraan ukuran kosakata Jepang Anda yang paling tepat dan terukur.
+-   **Sistem Tes Bertahap Otomatis**: Tes secara cerdas menyesuaikan tingkat kesulitan dan berhenti secara otomatis ketika batas kemampuan Anda terdeteksi.
+-   **Analisis Komprehensif**: Mengukur **Jangkauan Optimal** (estimasi total kosakata yang diketahui) dan **Peta Kepadatan Pengetahuan** Anda di berbagai level frekuensi.
+-   **Analisis Profil JLPT**: Memberikan gambaran kekuatan kosakata Anda sesuai level JLPT (N5-N1) melalui visualisasi Radar Chart.
+-   **Sumber Data Akademis**: Menggunakan data dari BCCWJ (Balanced Corpus of Contemporary Written Japanese) untuk kualitas data frekuensi yang valid.
 
 ## 🚀 Cara Menjalankan (Lokal)
 

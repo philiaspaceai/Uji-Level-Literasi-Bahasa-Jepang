@@ -8,6 +8,13 @@ import { STAGE_PARAMS, BANDS } from './constants';
 const DISPLAY_SIZE = STAGE_PARAMS.BATCH_SIZE;
 const BUFFER_SIZE = STAGE_PARAMS.BATCH_SIZE;
 
+const LOADING_MESSAGES = [
+  'Menganalisis frekuensi kata...',
+  'Menyiapkan pertanyaan tes...',
+  'Mengkalibrasi tingkat kesulitan...',
+  'Hampir selesai...',
+];
+
 export default function App() {
   const [appState, setAppState] = useState<AppState>('WELCOME');
   
@@ -23,7 +30,7 @@ export default function App() {
   const [wordsAnsweredInBand, setWordsAnsweredInBand] = useState<Record<number, number>>({});
 
   const [result, setResult] = useState<TestResult | null>(null);
-  const [loadingMsg, setLoadingMsg] = useState('Memuat data...');
+  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -32,6 +39,19 @@ export default function App() {
   const isFetchingRef = useRef(false);
 
   const TRANSITION_DURATION = 500;
+
+  useEffect(() => {
+    if (appState === 'LOADING') {
+      const interval = setInterval(() => {
+        setLoadingMsg(prevMsg => {
+          const currentIndex = LOADING_MESSAGES.indexOf(prevMsg);
+          const nextIndex = (currentIndex + 1) % LOADING_MESSAGES.length;
+          return LOADING_MESSAGES[nextIndex];
+        });
+      }, 1800);
+      return () => clearInterval(interval);
+    }
+  }, [appState]);
 
   const switchState = (newState: AppState, callback?: () => void) => {
     setIsTransitioning(true);
@@ -74,7 +94,6 @@ export default function App() {
   const loadInitialQueues = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
-    setLoadingMsg(`Memuat sesi tes...`);
     setAppState('LOADING');
 
     try {
@@ -250,7 +269,7 @@ export default function App() {
                  <span className="text-emerald-500 text-xs font-bold animate-pulse">JP</span>
                </div>
             </div>
-            <p className="text-emerald-100/80 font-mono text-sm animate-pulse tracking-wide uppercase">{loadingMsg}</p>
+            <p className="text-emerald-100/80 font-mono text-sm tracking-wide uppercase transition-opacity duration-500">{loadingMsg}</p>
           </div>
         )}
 
