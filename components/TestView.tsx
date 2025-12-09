@@ -9,9 +9,10 @@ interface TestViewProps {
   onRefresh: () => void;
   wordsAnsweredCount: number;
   isRefreshing: boolean;
+  networkStatusMessage: string;
 }
 
-export const TestView: React.FC<TestViewProps> = ({ displayQueue, wordMap, onAnswer, onRefresh, wordsAnsweredCount, isRefreshing }) => {
+export const TestView: React.FC<TestViewProps> = ({ displayQueue, wordMap, onAnswer, onRefresh, wordsAnsweredCount, isRefreshing, networkStatusMessage }) => {
 
   const handleCardClick = (itemId: number) => {
     onAnswer(itemId);
@@ -59,6 +60,14 @@ export const TestView: React.FC<TestViewProps> = ({ displayQueue, wordMap, onAns
              </div>
            );
         })}
+      </div>
+      
+      <div className="fixed bottom-24 left-0 right-0 px-4 flex justify-center items-center z-20 text-center pointer-events-none">
+          {networkStatusMessage && (
+              <div className="pointer-events-auto bg-slate-900/70 text-emerald-300 border border-slate-700 py-2 px-4 rounded-full text-xs font-mono backdrop-blur-sm transition-all animate-fade-in-up">
+                  {networkStatusMessage}
+              </div>
+          )}
       </div>
 
       <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center items-center z-10 will-change-transform">

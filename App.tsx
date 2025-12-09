@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppState, TestResult, Word } from './types';
-import { fetchStagedBatch, calculateTestResult } from './services/vocabService';
+import { fetchStagedBatchWithRetry, calculateTestResult } from './services/vocabService';
 import { TestView } from './components/TestView';
 import { ResultsView } from './components/ResultsView';
 import { STAGE_PARAMS, BANDS, getWordsPerBandToAdvance, getMaxRefreshesPerBand } from './constants';
@@ -31,6 +31,7 @@ export default function App() {
 
   const [result, setResult] = useState<TestResult | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+  const [networkStatusMessage, setNetworkStatusMessage] = useState<string>('');
   
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -63,23 +64,31 @@ export default function App() {
   };
 
   const finishTest = useCallback(() => {
-    if (appState === 'RESULTS') return;
+    if (appState === 'RESULTS' || appState === 'CALCULATING') return;
 
-    // Any words left on display are considered "unknown".
-    const finalUnanswered = displayQueue.map(item => ({...item, isKnown: false }));
-    
-    setAnswersHistory(currentHistory => {
-        const finalHistory = [...currentHistory, ...finalUnanswered];
+    // Immediately switch to the calculating view to provide feedback.
+    setAppState('CALCULATING');
+
+    // Use a short timeout to allow the UI to re-render to the 'CALCULATING' state
+    // before starting the potentially blocking calculation.
+    setTimeout(() => {
+        const finalUnanswered = displayQueue.map(item => ({...item, isKnown: false }));
+        const finalHistory = [...answersHistory, ...finalUnanswered];
         const res = calculateTestResult(finalHistory, wordMap);
+        
+        setAnswersHistory(finalHistory);
         setResult(res);
-        switchState('RESULTS');
-        return finalHistory;
-    });
-  }, [appState, displayQueue, wordMap]);
+        switchState('RESULTS'); // Now, transition smoothly to the results page.
+    }, 50);
+  }, [appState, displayQueue, wordMap, answersHistory]);
 
   const refillPrefetchQueue = useCallback(async (bandId: number) => {
     try {
-        const { queue: newWords, map: newWordMap } = await fetchStagedBatch(bandId, shownIdsRef.current, 1);
+        const { queue: newWords, map: newWordMap } = await fetchStagedBatchWithRetry(
+          bandId, 
+          shownIdsRef.current, 
+          1 // only fetch one for the buffer
+        );
         if (newWords.length > 0) {
             setPrefetchQueue(prev => [...prev, ...newWords]);
             setWordMap(prev => new Map([...prev, ...newWordMap]));
@@ -98,7 +107,13 @@ export default function App() {
 
     try {
         const totalToFetch = DISPLAY_SIZE + BUFFER_SIZE;
-        const { queue, map } = await fetchStagedBatch(1, shownIdsRef.current, totalToFetch);
+        const { queue, map } = await fetchStagedBatchWithRetry(
+            1, 
+            shownIdsRef.current, 
+            totalToFetch,
+            (attempt, max) => setNetworkStatusMessage(`Koneksi lambat. Mencoba lagi... (${attempt}/${max})`)
+        );
+        setNetworkStatusMessage('');
         
         if (queue.length < DISPLAY_SIZE) { // Check if we at least have enough for display
             setLoadingMsg('Kosakata tidak cukup untuk memulai tes.');
@@ -113,6 +128,7 @@ export default function App() {
         switchState('TEST');
     } catch (error) {
         console.error(error);
+        setNetworkStatusMessage('');
         setLoadingMsg('Gagal memuat. Coba lagi.');
         setTimeout(() => switchState('WELCOME'), 2000);
     } finally {
@@ -186,7 +202,13 @@ export default function App() {
       setIsRefreshing(true);
       try {
         const totalToFetch = DISPLAY_SIZE + BUFFER_SIZE;
-        const { queue, map } = await fetchStagedBatch(currentBandId, shownIdsRef.current, totalToFetch);
+        const { queue, map } = await fetchStagedBatchWithRetry(
+            currentBandId, 
+            shownIdsRef.current, 
+            totalToFetch,
+            (attempt, max) => setNetworkStatusMessage(`Koneksi lambat. Mencoba lagi... (${attempt}/${max})`)
+        );
+        setNetworkStatusMessage('');
         
         if (queue.length < DISPLAY_SIZE) {
             console.warn(`Could not fetch a full refresh batch. Ending test.`);
@@ -198,9 +220,13 @@ export default function App() {
         }
       } catch (e) {
         console.error("Failed to refresh batch", e);
+        setNetworkStatusMessage('');
         finishTest();
       } finally {
-        setIsRefreshing(false);
+        // Defer setting isRefreshing to false to the next event loop cycle.
+        // This ensures the DOM has a chance to update with the new words
+        // before the loading state is removed, preventing the UI from getting "stuck".
+        setTimeout(() => setIsRefreshing(false), 0);
       }
     }
   };
@@ -251,7 +277,7 @@ export default function App() {
             </p>
             <button
               onClick={handleStart}
-              className="group relative inline-flex items-center justify-center px-10 py-5 font-bold text-white transition-all duration-300 bg-emerald-600 rounded-2xl focus:outline-none hover:bg-emerald-500 hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95 active:bg-emerald-700"
+              className="group relative inline-flex items-center justify-center px-10 py-5 font-bold text-white transition-all duration-300 bg-gradient-to-r from-emerald-300 via-cyan-400 to-indigo-400 animate-gradient-x rounded-2xl focus:outline-none hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)] active:scale-95"
             >
               <div className="absolute inset-0 rounded-2xl ring-2 ring-white/20 group-hover:ring-white/40 transition-all"></div>
               <span className="text-lg relative z-10">Mulai Tes</span>
@@ -270,6 +296,20 @@ export default function App() {
                </div>
             </div>
             <p className="text-emerald-100/80 font-mono text-sm tracking-wide uppercase transition-opacity duration-500">{loadingMsg}</p>
+            {networkStatusMessage && <p className="text-emerald-300/60 font-mono text-xs mt-4">{networkStatusMessage}</p>}
+          </div>
+        )}
+
+        {appState === 'CALCULATING' && (
+          <div className="flex flex-col items-center justify-center space-y-8">
+            <div className="relative w-24 h-24">
+               <div className="absolute inset-0 border-t-4 border-emerald-500 border-solid rounded-full animate-spin"></div>
+               <div className="absolute inset-3 border-b-4 border-teal-700 border-solid rounded-full animate-spin-reverse opacity-50"></div>
+               <div className="absolute inset-0 flex items-center justify-center">
+                 <span className="text-emerald-500 text-xs font-bold animate-pulse">JP</span>
+               </div>
+            </div>
+            <p className="text-emerald-100/80 font-mono text-sm tracking-wide uppercase">Menganalisis Hasil Anda...</p>
           </div>
         )}
 
@@ -281,6 +321,7 @@ export default function App() {
             onRefresh={handleRefreshBatch}
             wordsAnsweredCount={knownWordsCount}
             isRefreshing={isRefreshing}
+            networkStatusMessage={networkStatusMessage}
           />
         )}
 

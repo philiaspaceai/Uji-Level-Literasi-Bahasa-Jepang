@@ -184,6 +184,39 @@ export async function fetchStagedBatch(
   return { queue: shuffle(finalQueue), map: finalMap };
 }
 
+// --- NEW: RETRY WRAPPER ---
+export async function fetchStagedBatchWithRetry(
+  startBandId: number,
+  excludedIds: Set<number>,
+  count: number = STAGE_PARAMS.BATCH_SIZE,
+  onRetryAttempt?: (attempt: number, maxRetries: number) => void
+): Promise<{
+  queue: { id: number, bandId: number }[],
+  map: Map<number, Word>
+}> {
+  let lastError: Error | null = null;
+  const maxRetries = 7;
+  let delay = 1000; // Start with 1 second
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await fetchStagedBatch(startBandId, excludedIds, count);
+      return result; // Success
+    } catch (error) {
+      lastError = error as Error;
+      if (onRetryAttempt) {
+        onRetryAttempt(i + 1, maxRetries);
+      }
+      console.warn(`Attempt ${i + 1} to fetch data failed. Retrying in ${delay / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+
+  console.error("All retry attempts failed. The server might be down or your connection is unstable.");
+  throw lastError; // Throw the last captured error after all retries fail
+}
+
 
 // --- FINAL CALCULATION (SIMPLIFIED) ---
 
@@ -241,7 +274,18 @@ export function calculateTestResult(
   });
 
   // --- NEW JLPT Score Sanity Check ---
-  // If foundation (N5/N4) is weak, nullify higher level scores to prevent misleading chart spikes.
+  
+  // Rule 1: Must have a minimum vocabulary size to qualify for higher JLPT levels.
+  const MIN_COVERAGE_FOR_HIGHER_JLPT = 3500;
+  if (benchmark.coverageRank <= MIN_COVERAGE_FOR_HIGHER_JLPT) {
+      jlptScores.forEach(score => {
+          if (['N3', 'N2', 'N1'].includes(score.level)) {
+              score.score = 0;
+          }
+      });
+  }
+
+  // Rule 2: If foundation (N5/N4) is weak, nullify higher level scores to prevent misleading chart spikes.
   const n5 = jlptScores.find(s => s.level === 'N5');
   const n4 = jlptScores.find(s => s.level === 'N4');
   const MIN_SAMPLES_FOR_JLPT_PROFICIENCY = 3;
@@ -252,7 +296,7 @@ export function calculateTestResult(
 
   if (!isN5Proficient || !isN4Proficient) {
     jlptScores.forEach(score => {
-      if (score.level === 'N3' || score.level === 'N2' || score.level === 'N1') {
+      if (['N3', 'N2', 'N1'].includes(score.level)) {
         score.score = 0;
       }
     });

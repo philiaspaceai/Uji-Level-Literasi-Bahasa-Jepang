@@ -39,4 +39,4 @@ export interface TestResult {
   totalQuestions: number;
 }
 
-export type AppState = 'WELCOME' | 'LOADING' | 'TEST' | 'RESULTS';
+export type AppState = 'WELCOME' | 'LOADING' | 'TEST' | 'CALCULATING' | 'RESULTS';
