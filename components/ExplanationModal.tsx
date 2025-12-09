@@ -44,7 +44,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
     >
       <div 
         ref={modalRef}
-        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto relative animate-card-in"
+        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto relative animate-card-in"
       >
         <button 
           onClick={onClose}
@@ -54,11 +54,11 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
 
-        <h2 id="explanation-title" className="text-2xl font-bold text-emerald-400 mb-4">
+        <h2 id="explanation-title" className="text-xl font-bold text-emerald-400 mb-3">
           Memahami Skor Anda: Kosakata Pasif
         </h2>
 
-        <div className="space-y-4 text-slate-300">
+        <div className="space-y-3 text-slate-300">
           <div>
             <h3 className="font-semibold text-slate-100 mb-2">Apa Arti Angka Ini?</h3>
             <p>
@@ -77,7 +77,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
                 <p className="font-bold text-emerald-300">✓ Pasif (Yang Diukur)</p>
-                <p className="mt-1 text-slate-400">Anda melihat <span className="font-jp font-bold">環境</span> (kankyō) dan langsung tahu cara membacanya, bahkan jika butuh sedetik untuk ingat artinya adalah "lingkungan".</p>
+                <p className="mt-1 text-slate-400">Anda melihat <span className="font-jp font-bold">環境</span> (kankyō) dan langsung tahu cara bacanya, bahkan jika butuh sedetik untuk ingat artinya adalah "lingkungan".</p>
               </div>
               <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
                 <p className="font-bold text-rose-400">✗ Aktif (Tidak Diukur)</p>

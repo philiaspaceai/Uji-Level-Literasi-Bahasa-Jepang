@@ -34,18 +34,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ result, onRetry }) => 
       const lowestChallenge = scores.find(s => s.score < 50 && s.total > 2);
 
       if (!highestMastered) {
-          return "Anda berada di tahap awal perjalanan literasi Anda. Fondasi kosakata dasar adalah kunci untuk membuka pemahaman yang lebih luas. Teruslah berlatih!";
+          return "Anda sedang membangun fondasi literasi Anda. Menguatkan pengenalan kosakata dasar akan membuka kemampuan membaca yang jauh lebih luas. Teruslah berlatih!";
       }
       
       if (highestMastered.level === 'N1') {
-          return "Anda telah mencapai puncak penguasaan kosakata JLPT. Kemampuan literasi Anda memungkinkan Anda untuk memahami materi formal dan teknis dengan sangat baik.";
+          return "Kemampuan membaca Anda sangat tinggi, mencakup sebagian besar kosakata yang diuji dalam JLPT hingga level N1. Ini menandakan Anda dapat mengenali kata-kata dalam materi formal dan teknis dengan sangat baik.";
       }
 
       if (highestMastered && lowestChallenge) {
-           return `Kekuatan utama Anda berada di level ${highestMastered.level}, menunjukkan pemahaman yang solid pada tingkat tersebut. Tantangan berikutnya adalah memperkuat kosakata di level ${lowestChallenge.level} untuk kemajuan yang signifikan.`;
+           return `Kekuatan utama Anda dalam mengenali kosakata berada di level ${highestMastered.level}. Tantangan berikutnya untuk memperluas jangkauan bacaan Anda adalah memperkuat kosakata di level ${lowestChallenge.level}.`;
       }
       
-      return `Anda menunjukkan penguasaan yang baik hingga level ${highestMastered.level}. Ini adalah pencapaian luar biasa yang menjadi dasar kuat untuk terus berkembang ke tingkat selanjutnya.`;
+      return `Anda menunjukkan kemampuan membaca yang solid hingga level ${highestMastered.level}. Ini adalah dasar yang kuat untuk terus memperluas jangkauan bacaan Anda ke tingkat selanjutnya.`;
   }
 
   return (
