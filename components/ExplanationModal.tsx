@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ExplanationModalProps {
   onClose: () => void;
@@ -6,6 +7,7 @@ interface ExplanationModalProps {
 
 export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const modalRoot = document.getElementById('modal-root');
 
   useEffect(() => {
     // Prevent background scrolling when modal is open
@@ -35,7 +37,12 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
     };
   }, [onClose]);
 
-  return (
+  if (!modalRoot) {
+    // This should not happen in a normal flow, but it's a good safeguard.
+    return null;
+  }
+
+  return createPortal(
     <div 
       className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
       role="dialog"
@@ -44,7 +51,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
     >
       <div 
         ref={modalRef}
-        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto relative animate-card-in"
+        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 w-full max-w-[90vw] md:max-w-md aspect-square max-h-[90vh] overflow-y-auto relative animate-card-in hide-scrollbar"
       >
         <button 
           onClick={onClose}
@@ -105,6 +112,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    modalRoot
   );
 };
