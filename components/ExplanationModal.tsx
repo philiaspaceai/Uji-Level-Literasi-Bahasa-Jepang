@@ -37,14 +37,14 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
 
   return (
     <div 
-      className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-start justify-center z-50 p-4 pt-24 animate-fade-in"
+      className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="explanation-title"
     >
       <div 
         ref={modalRef}
-        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative animate-card-in"
+        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto relative animate-card-in"
       >
         <button 
           onClick={onClose}
@@ -58,7 +58,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
           Memahami Skor Anda: Kosakata Pasif
         </h2>
 
-        <div className="space-y-6 text-slate-300">
+        <div className="space-y-4 text-slate-300">
           <div>
             <h3 className="font-semibold text-slate-100 mb-2">Apa Arti Angka Ini?</h3>
             <p>
@@ -74,7 +74,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
             <p>
               Penting untuk dipahami, tes ini secara spesifik mengukur kemampuan <strong className="text-emerald-300">pasif</strong> (membaca/mengenali), bukan kemampuan <strong className="text-rose-400">aktif</strong> (berbicara/menulis).
             </p>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
                 <p className="font-bold text-emerald-300">✓ Pasif (Yang Diukur)</p>
                 <p className="mt-1 text-slate-400">Anda melihat <span className="font-jp font-bold">環境</span> (kankyō) dan langsung tahu cara membacanya, bahkan jika butuh sedetik untuk ingat artinya adalah "lingkungan".</p>
@@ -84,7 +84,7 @@ export const ExplanationModal: React.FC<ExplanationModalProps> = ({ onClose }) =
                 <p className="mt-1 text-slate-400">Anda ingin bilang "lingkungan kerja" dan kata <span className="font-jp font-bold">環境</span> langsung muncul di kepala Anda untuk diucapkan.</p>
               </div>
             </div>
-             <p className="mt-4 text-sm">
+             <p className="mt-3 text-sm">
                 Skor tinggi di sini menunjukkan Anda memiliki fondasi yang sangat kuat untuk menjadi pembaca yang hebat. Langkah selanjutnya adalah melatih diri untuk mengubah 'perpustakaan pasif' ini menjadi kosakata aktif yang siap pakai.
             </p>
           </div>
