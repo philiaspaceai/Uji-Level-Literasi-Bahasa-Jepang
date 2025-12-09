@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tes Literasi Bahasa Jepang</title>
+    <title>Tes Frekuensi Kosakata Jepang</title>
     <meta name="description" content="Uji kemampuan membaca dan estimasi kosakata bahasa Jepang Anda secara akurat.">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,6 +42,21 @@
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
+      }
+
+      /* Card Animation for smooth rendering */
+      @keyframes card-in {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .animate-card-in {
+        animation: card-in 0.3s ease-out forwards;
       }
     </style>
   <script type="importmap">

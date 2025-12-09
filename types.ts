@@ -1,45 +1,42 @@
+
+
 export interface Word {
   id: number;
   word: string;
+  tags?: string; // e.g., "5", "4", etc.
 }
 
 export interface BandConfig {
   id: number;
   minRank: number;
   maxRank: number;
-  ratio: number; // Percentage of total questions allocated to this band (0.0 - 1.0)
-  sparsityFactor: number; // Damping factor for sparse knowledge in high bands (0.0 - 1.0)
 }
 
-export interface TestMode {
-  id: 'quick' | 'standard' | 'accurate';
-  label: string;
-  totalQuestions: number;
-  description: string;
-  estimatedTime: string;
-  icon: string;
+export interface DensityStat {
+  bandId: number;
+  startRank: number;
+  endRank: number;
+  known: number;
+  total: number;
+  density: number; // percentage 0-100
 }
 
-export interface RadarStats {
-  survival: number;
-  formal: number;
-  culture: number;
-  literary: number;
-  complexity: number;
+export interface BenchmarkMetrics {
+  coverageRank: number; // Total estimated words known
+  densityStats: DensityStat[];
+}
+
+export interface JlptScore {
+    level: string; // N5, N4, N3, N2, N1
+    score: number; // Percentage 0-100
+    total: number;
+    known: number;
 }
 
 export interface TestResult {
-  totalPredicted: number;
-  jlptLevel: string;
-  cefrLevel: string;
-  ageEquivalent: string;
-  literacyDescription: string;
-  details: {
-    bandId: number;
-    totalInBand: number;
-    knownInBand: number;
-    predictedInBand: number;
-  }[];
+  benchmark: BenchmarkMetrics;
+  jlptScores: JlptScore[];
+  totalQuestions: number;
 }
 
-export type AppState = 'WELCOME' | 'MODE_SELECT' | 'LOADING' | 'TEST' | 'RESULTS';
+export type AppState = 'WELCOME' | 'LOADING' | 'TEST' | 'RESULTS';

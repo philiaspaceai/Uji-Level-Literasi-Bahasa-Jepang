@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "description": "Japanese vocabulary size test based on word frequency from the BCCWJ.",
   "author": "Philia Space Community",
   "scripts": {
     "dev": "vite",

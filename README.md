@@ -1,51 +1,50 @@
-# JP Kanji Literacy Test (Uji Literasi Jepang)
+# Tes Frekuensi Kosakata Jepang
 
-Aplikasi web interaktif untuk menguji estimasi jumlah kosakata (Vocabulary Size) bahasa Jepang, dengan fokus khusus pada **Kemampuan Membaca (Literasi)**.
+Aplikasi web untuk mengukur jangkauan kosakata bahasa Jepang Anda berdasarkan frekuensi kata dalam bahasa Jepang modern.
 
-Dibuat menggunakan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
+Dibuat dengan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
 
-## 🌟 Fitur Utama
+## 🌟 Fitur Inti
 
-- **Jukugo Filter**: Algoritma cerdas yang memprioritaskan kata majemuk Kanji (Jukugo) di level tinggi untuk meminimalisir tebakan fonetik.
-- **Guillotine Scoring**: Sistem penilaian ketat yang menghentikan perhitungan level tinggi jika fondasi level menengah tidak kuat.
-- **3 Mode Tes**: Cepat (100 kata), Standar (200 kata), Akurat (500 kata).
-- **Responsive UI**: Tampilan Dark Mode yang indah dengan animasi halus.
+- **Sistem Tes Bertahap Otomatis**: Tes secara cerdas menyesuaikan tingkat kesulitan dan berhenti secara otomatis ketika batas kemampuan Anda terdeteksi.
+- **Analisis Komprehensif**: Mengukur **Jangkauan Optimal** (estimasi total kosakata yang diketahui) dan **Peta Kepadatan Pengetahuan** Anda di berbagai level frekuensi.
+- **Analisis Profil JLPT**: Memberikan gambaran kekuatan kosakata Anda sesuai level JLPT (N5-N1) melalui visualisasi Radar Chart.
+- **Sumber Data Akademis**: Menggunakan data dari BCCWJ (Balanced Corpus of Contemporary Written Japanese) untuk kualitas data frekuensi yang valid.
 
-## 🚀 Cara Menjalankan (Local)
+## 🚀 Cara Menjalankan (Lokal)
 
-1. **Clone repository ini**
-   ```bash
-   git clone https://github.com/username-anda/jp-vocab-test.git
-   cd jp-vocab-test
-   ```
+1.  **Clone repositori ini**
+    ```bash
+    git clone https://github.com/philia-space/jp-vocab-test.git
+    cd jp-vocab-test
+    ```
 
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+2.  **Install Dependensi**
+    ```bash
+    npm install
+    ```
 
-3. **Jalankan Server Development**
-   ```bash
-   npm run dev
-   ```
-   Buka `http://localhost:5173` di browser.
+3.  **Jalankan Development Server**
+    ```bash
+    npm run dev
+    ```
+    Buka `http://localhost:5173` di browser Anda.
 
 ## 📦 Cara Deploy ke Vercel
 
-1. Push kode ini ke repository GitHub Anda.
-2. Buka [Vercel](https://vercel.com) dan buat New Project.
-3. Import repository GitHub tadi.
-4. Vercel akan otomatis mendeteksi framework **Vite**.
+1. Push kode ke repositori GitHub Anda.
+2. Buka [Vercel](https://vercel.com) dan buat Proyek Baru.
+3. Impor repositori GitHub.
+4. Vercel akan secara otomatis mendeteksi preset framework **Vite**.
 5. Klik **Deploy**.
 
-## 🛠 Teknologi
+## 🛠 Tumpukan Teknologi
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS (via CDN untuk portabilitas tinggi)
-- **Icons**: SVG Heroicons
-- **Database**: Supabase (via REST API)
+-   **Frontend**: React 18 + TypeScript
+-   **Build Tool**: Vite
+-   **Styling**: Tailwind CSS
+-   **Database**: Supabase (via REST API)
 
 ## 📝 Kredit
 
-Dibuat oleh **Philia Space Community**.
+[Philia Space Community](https://philiaspace.my.id/)

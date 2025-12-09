@@ -1,7 +1,7 @@
 
 
-import { API_KEY, API_URL, BANDS, CEFR_LEVELS, JLPT_LEVELS, AGE_EQUIVALENTS, LITERACY_DESCRIPTIONS } from '../constants';
-import { Word, TestResult } from '../types';
+import { API_KEY, API_URL, BANDS, STAGE_PARAMS } from '../constants';
+import { Word, TestResult, BenchmarkMetrics, DensityStat, JlptScore } from '../types';
 
 // Helper to shuffle array
 function shuffle<T>(array: T[]): T[] {
@@ -14,227 +14,253 @@ function shuffle<T>(array: T[]): T[] {
   return array;
 }
 
-// Fetch words from Supabase using REST API
-export async function fetchWords(idsObj: { id: number, bandId: number }[]): Promise<Map<number, Word>> {
-  // Extract just the IDs
-  const ids = idsObj.map(o => o.id);
-  
+// Data Fetching (largely unchanged, but crucial)
+export async function fetchWords(ids: number[]): Promise<Map<number, Word>> {
   if (ids.length === 0) return new Map();
 
-  // Supabase REST ID limit might be around ~2048 chars in URL, or limited by GET.
-  // We batch them.
   const BATCH_SIZE = 50;
   const wordMap = new Map<number, Word>();
+  const wordsToQueryForJlpt: string[] = [];
 
   for (let i = 0; i < ids.length; i += BATCH_SIZE) {
     const batch = ids.slice(i, i + BATCH_SIZE);
     const filter = `id=in.(${batch.join(',')})`;
-    const url = `${API_URL}/rest/v1/jpdb?select=id,word&${filter}`;
+    const url = `${API_URL}/rest/v1/bccwj?select=id,word&${filter}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'apikey': API_KEY,
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
+    let response;
+    try {
+        response = await fetch(url, {
+            method: 'GET',
+            headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        console.error('Network error while fetching BCCWJ words:', error);
+        throw new Error('Gagal terhubung ke server kosakata. Periksa koneksi internet Anda.');
+    }
 
     if (!response.ok) {
-      throw new Error('Gagal mengambil data kosakata');
+        console.error(`BCCWJ data fetch failed with status: ${response.status}`);
+        throw new Error('Gagal mengambil data kosakata BCCWJ');
     }
 
     const data: Word[] = await response.json();
-    data.forEach(w => wordMap.set(w.id, w));
+    data.forEach(w => {
+        wordMap.set(w.id, w);
+        wordsToQueryForJlpt.push(w.word);
+    });
+  }
+
+  if (wordsToQueryForJlpt.length > 0) {
+    const jlptWordMap = new Map<string, string>();
+    const JLPT_QUERY_BATCH_SIZE = 25; // Smaller batch to prevent URL length issues
+
+    for (let i = 0; i < wordsToQueryForJlpt.length; i += JLPT_QUERY_BATCH_SIZE) {
+        const batch = wordsToQueryForJlpt.slice(i, i + JLPT_QUERY_BATCH_SIZE);
+        const jlptFilter = `word=in.(${batch.map(w => `"${w.replace(/"/g, '""')}"`).join(',')})`;
+        const jlptUrl = `${API_URL}/rest/v1/jlpt?select=word,tags&${jlptFilter}`;
+        
+        try {
+            const jlptResponse = await fetch(jlptUrl, {
+                method: 'GET',
+                headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
+            });
+            if (jlptResponse.ok) {
+                const jlptData: { word: string, tags: string }[] = await jlptResponse.json();
+                jlptData.forEach(item => jlptWordMap.set(item.word, item.tags));
+            } else {
+                console.warn(`JLPT sub-batch fetch failed with status: ${jlptResponse.status}`);
+            }
+        } catch (error) {
+            console.error('Network error fetching JLPT tags sub-batch:', error);
+            // Do not throw; continue so the test isn't interrupted by non-critical data failure.
+        }
+    }
+    
+    for (const word of wordMap.values()) {
+        if (jlptWordMap.has(word.word)) {
+            word.tags = jlptWordMap.get(word.word);
+        }
+    }
   }
 
   return wordMap;
 }
 
-// NEW: Prepare Session with Jukugo Filtering
-// This function handles generation, fetching, and filtering in one go.
-export async function prepareTestSession(totalQuestions: number): Promise<{
+// --- WORD VALIDATION (CORRECTED) ---
+function isValidWord(w: string | undefined): boolean {
+    if (!w) return false;
+    
+    // Filter out basic symbols and Arabic numerals
+    if (w.includes(':') || w.includes('：') || w.includes('・') || w.includes('％')) return false;
+    if (/[0-9０-９]/.test(w)) return false;
+
+    // Filter out patterns of numbers + counters (e.g., 六十二年度, 三日目)
+    const kanjiNumerals = '一二三四五六七八九十百千万億兆〇';
+    const counterPattern = /^[一二三四五六七八九十百千万億兆〇]+(年度|日目|時間|分|秒|回|番|月|日|年|人|円|階|号)$/;
+    if (counterPattern.test(w)) {
+        return false;
+    }
+
+    // Filter out words that are ONLY numerals
+    if (w.length >= 2) {
+        let allNumerals = true;
+        for (const char of w) {
+            if (!kanjiNumerals.includes(char)) {
+                allNumerals = false;
+                break;
+            }
+        }
+        if (allNumerals) {
+            return false;
+        }
+    }
+
+    return true; // Katakana is allowed, Jukugo rule is removed.
+}
+
+
+// --- STAGED TEST LOGIC (ROBUST VERSION) ---
+
+export async function fetchStagedBatch(
+  startBandId: number,
+  excludedIds: Set<number>,
+  count: number = STAGE_PARAMS.BATCH_SIZE
+): Promise<{
   queue: { id: number, bandId: number }[],
   map: Map<number, Word>
 }> {
-  let candidatesToFetch: { id: number, bandId: number }[] = [];
-  
-  // 1. Generate Candidates (Buffer Strategy)
-  BANDS.forEach(band => {
-    const targetCount = Math.round(totalQuestions * band.ratio);
-    
-    // Modified: Increase buffer for all bands.
-    // Band 1-2: 2x (to allow deduping if duplicates found)
-    // Band 3+: 4x (to allow Jukugo filtering)
-    const multiplier = band.id >= 3 ? 4 : 2; 
-    const countToFetch = Math.ceil(targetCount * multiplier);
+  let currentBandId = startBandId;
+  const finalQueue: { id: number, bandId: number }[] = [];
+  const finalMap = new Map<number, Word>();
+
+  while (finalQueue.length < count && currentBandId <= BANDS.length) {
+    const band = BANDS.find(b => b.id === currentBandId)!;
+    const needed = count - finalQueue.length;
     
     const range = band.maxRank - band.minRank + 1;
-    const usedIndices = new Set<number>();
+    const candidateIds = new Set<number>();
     
-    // Safety check in case range is smaller than request
-    const actualCount = Math.min(countToFetch, range);
-    
-    for (let i = 0; i < actualCount; i++) {
-      let r;
-      do {
-        r = Math.floor(Math.random() * range);
-      } while (usedIndices.has(r));
-      usedIndices.add(r);
-      
-      candidatesToFetch.push({
-        id: band.minRank + r,
-        bandId: band.id
-      });
-    }
-  });
-
-  // 2. Fetch All Candidates
-  const wordMap = await fetchWords(candidatesToFetch);
-
-  // 3. Filter and Assemble Final Queue
-  let finalQueue: { id: number, bandId: number }[] = [];
-  const addedWordStrings = new Set<string>(); // Track unique word strings to prevent duplicates
-
-  // Regex for "Jukugo" (Compound Words): Contains 2 or more consecutive Kanji
-  // Unicode Range for CJK Unified Ideographs: \u4e00-\u9faf
-  const jukugoRegex = /[\u4e00-\u9faf]{2,}/;
-
-  BANDS.forEach(band => {
-    const targetCount = Math.round(totalQuestions * band.ratio);
-    
-    // Get all fetched words for this band
-    const bandCandidates = candidatesToFetch
-      .filter(item => item.bandId === band.id)
-      .map(item => ({ item, wordStr: wordMap.get(item.id)?.word }));
-
-    let selectedForBand: { id: number, bandId: number }[] = [];
-
-    // Helper to add unique words only
-    const addUnique = (list: typeof bandCandidates, limit: number) => {
-        for (const candidate of list) {
-            if (selectedForBand.length >= limit) break;
-            
-            // Skip if word string is missing OR already used in previous bands/current band
-            if (!candidate.wordStr || addedWordStrings.has(candidate.wordStr)) continue;
-            
-            selectedForBand.push(candidate.item);
-            addedWordStrings.add(candidate.wordStr);
+    // Increase attempts to find valid words
+    const maxBandAttempts = Math.max(needed * 10, 100);
+    let bandAttempts = 0;
+    // We aim for more candidates to account for filtering
+    while(candidateIds.size < needed * 3 && bandAttempts < maxBandAttempts) {
+        const randomId = band.minRank + Math.floor(Math.random() * range);
+        if (!excludedIds.has(randomId) && !candidateIds.has(randomId)) {
+            candidateIds.add(randomId);
         }
-    };
+        bandAttempts++;
+    }
 
-    if (band.id <= 2) {
-      // Basic bands: Shuffle and pick unique
-      const shuffled = shuffle(bandCandidates);
-      addUnique(shuffled, targetCount);
-    } else {
-      // Advanced bands: Prioritize Jukugo
-      const jukugoWords = bandCandidates.filter(c => c.wordStr && jukugoRegex.test(c.wordStr));
-      const otherWords = bandCandidates.filter(c => !c.wordStr || !jukugoRegex.test(c.wordStr));
-      
-      const shuffledJukugo = shuffle(jukugoWords);
-      const shuffledOthers = shuffle(otherWords);
-      
-      // Try to fill quota with Jukugo first
-      addUnique(shuffledJukugo, targetCount);
-      
-      // If not enough, fill with others
-      if (selectedForBand.length < targetCount) {
-        addUnique(shuffledOthers, targetCount);
-      }
+    if (candidateIds.size > 0) {
+        const wordMap = await fetchWords(Array.from(candidateIds));
+        
+        // ** CRITICAL FIX **: Relaxed filtering.
+        // The old filter was too strict, removing valid Katakana and non-Jukugo words.
+        const validWords = Array.from(wordMap.keys())
+            .map(id => ({ id, bandId: currentBandId }))
+            .filter(item => {
+                const w = wordMap.get(item.id)?.word;
+                return isValidWord(w); // Use the corrected, simpler validation.
+            });
+        
+        for (const item of validWords) {
+            if (finalQueue.length < count) {
+                finalQueue.push(item);
+                finalMap.set(item.id, wordMap.get(item.id)!);
+                excludedIds.add(item.id);
+            } else {
+                break;
+            }
+        }
     }
     
-    finalQueue = [...finalQueue, ...selectedForBand];
-  });
-
-  return {
-    queue: shuffle(finalQueue),
-    map: wordMap
-  };
-}
-
-export function calculateTestResult(
-  knownIds: Set<number>, 
-  allTestItems: { id: number, bandId: number }[], 
-  totalQuestions: number
-): TestResult {
-  let totalPredicted = 0;
-  
-  // 1. Calculate Raw Stats per Band
-  let stats = BANDS.map(band => {
-    const itemsInBand = allTestItems.filter(item => item.bandId === band.id);
-    const totalTested = itemsInBand.length;
-    
-    if (totalTested === 0) return { bandId: band.id, ratio: 0, total: 0, known: 0 };
-
-    const knownCount = itemsInBand.filter(item => knownIds.has(item.id)).length;
-    const ratio = knownCount / totalTested;
-    
-    return { bandId: band.id, ratio, total: totalTested, known: knownCount };
-  });
-
-  // 2. "The Guillotine" Logic (Hard Cut-off)
-  const FAILURE_THRESHOLD = 0.3; 
-  let guillotineDropped = false;
-
-  stats = stats.map(stat => {
-    if (guillotineDropped) {
-        return { ...stat, ratio: 0, known: 0 }; 
+    // If we still haven't found enough words, move to the next band.
+    if (finalQueue.length < count) {
+        currentBandId++;
     }
-    if (stat.bandId >= 3 && stat.ratio < FAILURE_THRESHOLD) {
-        guillotineDropped = true;
-    }
-    return stat;
-  });
-
-  // 3. Volatility Damping (Short Tests)
-  let volatilityDamping = 1.0;
-  if (totalQuestions <= 100) {
-    volatilityDamping = 0.6; 
-  } else if (totalQuestions <= 200) {
-    volatilityDamping = 0.85; 
   }
 
-  // 4. Final Calculation & Details
-  const details = stats.map((stat) => {
-    const bandConfig = BANDS.find(b => b.id === stat.bandId)!;
-    const bandSize = bandConfig.maxRank - bandConfig.minRank + 1;
-    
-    let finalRatio = stat.ratio;
-    
-    // Apply Volatility Damping for advanced bands if test is short
-    if (stat.bandId >= 4) {
-      finalRatio = finalRatio * volatilityDamping;
+  return { queue: shuffle(finalQueue), map: finalMap };
+}
+
+
+// --- FINAL CALCULATION (SIMPLIFIED) ---
+
+export function calculateTestResult(
+  history: { id: number, bandId: number, isKnown: boolean }[],
+  wordMap: Map<number, Word>
+): TestResult {
+  let coverageRank = 0;
+
+  const densityStats: DensityStat[] = BANDS.map(band => {
+      const itemsInBand = history.filter(h => h.bandId === band.id);
+      const total = itemsInBand.length;
+      if (total === 0) {
+        return { bandId: band.id, startRank: band.minRank, endRank: band.maxRank, known: 0, total: 0, density: 0 };
+      }
+      
+      const known = itemsInBand.filter(h => h.isKnown).length;
+      const density = Math.round((known / total) * 100);
+      const bandSize = band.maxRank - band.minRank + 1;
+      
+      coverageRank += Math.round((density / 100) * bandSize);
+      
+      return {
+        bandId: band.id,
+        startRank: band.minRank,
+        endRank: band.maxRank,
+        known,
+        total,
+        density,
+      };
+  });
+  
+  const benchmark: BenchmarkMetrics = { coverageRank, densityStats };
+  
+  // JLPT Score Calculation
+  const jlptLevels = ['N5', 'N4', 'N3', 'N2', 'N1'];
+  const jlptStats: Record<string, { total: number, known: number }> = jlptLevels.reduce((acc, level) => ({...acc, [level]: {total: 0, known: 0}}), {});
+
+  history.forEach(item => {
+    const wordData = wordMap.get(item.id);
+    if (wordData?.tags) {
+        const jlptKey = `N${String(wordData.tags).trim()}`;
+        if (jlptStats[jlptKey]) {
+            jlptStats[jlptKey].total++;
+            if (item.isKnown) {
+                jlptStats[jlptKey].known++;
+            }
+        }
     }
-
-    // Apply Sparsity Damping (New Logic)
-    // Even if ratio is 1.0 (100% correct), we discount the effective population size for high bands
-    // because knowledge is sparse ("Swiss Cheese Effect").
-    const effectiveBandSize = bandSize * bandConfig.sparsityFactor;
-
-    let predictedInBand = Math.round(finalRatio * effectiveBandSize);
-    totalPredicted += predictedInBand;
-
-    return {
-      bandId: stat.bandId,
-      totalInBand: stat.total,
-      knownInBand: stat.known,
-      predictedInBand
-    };
   });
 
-  // 5. Select Descriptions (Simplified: No Learner Type)
-  const jlpt = JLPT_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Belum N5';
-  const cefr = CEFR_LEVELS.slice().reverse().find(l => totalPredicted >= l.threshold)?.level || 'Pre-A1';
-  const age = AGE_EQUIVALENTS.slice().reverse().find(l => totalPredicted >= l.threshold)?.age || 'Balita';
-  const literacy = LITERACY_DESCRIPTIONS.slice().reverse().find(l => totalPredicted >= l.threshold)?.desc || 'Belum bisa membaca teks Jepang.';
+  const jlptScores: JlptScore[] = jlptLevels.map(level => {
+      const stats = jlptStats[level];
+      return { level, score: stats.total > 0 ? Math.round((stats.known / stats.total) * 100) : 0, total: stats.total, known: stats.known };
+  });
+
+  // --- NEW JLPT Score Sanity Check ---
+  // If foundation (N5/N4) is weak, nullify higher level scores to prevent misleading chart spikes.
+  const n5 = jlptScores.find(s => s.level === 'N5');
+  const n4 = jlptScores.find(s => s.level === 'N4');
+  const MIN_SAMPLES_FOR_JLPT_PROFICIENCY = 3;
+  const PROFICIENCY_SCORE_THRESHOLD = 60;
+
+  const isN5Proficient = n5 && n5.score >= PROFICIENCY_SCORE_THRESHOLD && n5.total >= MIN_SAMPLES_FOR_JLPT_PROFICIENCY;
+  const isN4Proficient = n4 && n4.score >= PROFICIENCY_SCORE_THRESHOLD && n4.total >= MIN_SAMPLES_FOR_JLPT_PROFICIENCY;
+
+  if (!isN5Proficient || !isN4Proficient) {
+    jlptScores.forEach(score => {
+      if (score.level === 'N3' || score.level === 'N2' || score.level === 'N1') {
+        score.score = 0;
+      }
+    });
+  }
 
   return {
-    totalPredicted,
-    jlptLevel: jlpt,
-    cefrLevel: cefr,
-    ageEquivalent: age,
-    literacyDescription: literacy,
-    details
+    benchmark,
+    jlptScores,
+    totalQuestions: history.length,
   };
 }
