@@ -3,7 +3,7 @@ import { AppState, TestResult, Word } from './types';
 import { fetchStagedBatch, calculateTestResult } from './services/vocabService';
 import { TestView } from './components/TestView';
 import { ResultsView } from './components/ResultsView';
-import { STAGE_PARAMS, BANDS } from './constants';
+import { STAGE_PARAMS, BANDS, getWordsPerBandToAdvance, getMaxRefreshesPerBand } from './constants';
 
 const DISPLAY_SIZE = STAGE_PARAMS.BATCH_SIZE;
 const BUFFER_SIZE = STAGE_PARAMS.BATCH_SIZE;
@@ -158,7 +158,7 @@ export default function App() {
     setWordsAnsweredInBand(prev => ({ ...prev, [currentBandId]: newCount }));
     
     let bandToFetchFrom = currentBandId;
-    if (newCount >= STAGE_PARAMS.WORDS_PER_BAND_TO_ADVANCE && currentBandId < BANDS.length) {
+    if (newCount >= getWordsPerBandToAdvance(currentBandId) && currentBandId < BANDS.length) {
         const nextBandId = currentBandId + 1;
         setCurrentBandId(nextBandId);
         bandToFetchFrom = nextBandId;
@@ -180,7 +180,7 @@ export default function App() {
     newCounts[currentBandId] = currentCount;
     setRefreshCounts(newCounts);
 
-    if (currentCount >= STAGE_PARAMS.MAX_REFRESH_PER_BAND) {
+    if (currentCount >= getMaxRefreshesPerBand(currentBandId)) {
       finishTest();
     } else {
       setIsRefreshing(true);
