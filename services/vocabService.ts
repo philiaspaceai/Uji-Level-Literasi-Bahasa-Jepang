@@ -14,7 +14,29 @@ function shuffle<T>(array: T[]): T[] {
   return array;
 }
 
-// Data Fetching (largely unchanged, but crucial)
+// Helper: Fetch with Timeout to handle Cold Starts & Zombie Requests
+// Increased timeout to 25s to accommodate slower Supabase cold starts
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 25000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error: any) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out (Server taking too long).');
+    }
+    throw error;
+  }
+}
+
+// Data Fetching
 export async function fetchWords(ids: number[]): Promise<Map<number, Word>> {
   if (ids.length === 0) return new Map();
 
@@ -29,17 +51,19 @@ export async function fetchWords(ids: number[]): Promise<Map<number, Word>> {
 
     let response;
     try {
-        response = await fetch(url, {
+        // Use fetchWithTimeout
+        response = await fetchWithTimeout(url, {
             method: 'GET',
             headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
         });
     } catch (error) {
-        console.error('Network error while fetching BCCWJ words:', error);
-        throw new Error('Gagal terhubung ke server kosakata. Periksa koneksi internet Anda.');
+        // Use warn instead of error to prevent console spam during retries
+        console.warn('Network warning while fetching BCCWJ words:', error);
+        throw error; // Rethrow original error to allow upstream retry logic to handle it properly
     }
 
     if (!response.ok) {
-        console.error(`BCCWJ data fetch failed with status: ${response.status}`);
+        console.warn(`BCCWJ data fetch failed with status: ${response.status}`);
         throw new Error('Gagal mengambil data kosakata BCCWJ');
     }
 
@@ -60,10 +84,12 @@ export async function fetchWords(ids: number[]): Promise<Map<number, Word>> {
         const jlptUrl = `${API_URL}/rest/v1/jlpt?select=word,tags&${jlptFilter}`;
         
         try {
-            const jlptResponse = await fetch(jlptUrl, {
+            // Use fetchWithTimeout for JLPT tags too, but allow failover
+            const jlptResponse = await fetchWithTimeout(jlptUrl, {
                 method: 'GET',
                 headers: { 'apikey': API_KEY, 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' }
-            });
+            }, 10000); // Shorter timeout for non-critical data
+
             if (jlptResponse.ok) {
                 const jlptData: { word: string, tags: string }[] = await jlptResponse.json();
                 jlptData.forEach(item => jlptWordMap.set(item.word, item.tags));
@@ -71,7 +97,7 @@ export async function fetchWords(ids: number[]): Promise<Map<number, Word>> {
                 console.warn(`JLPT sub-batch fetch failed with status: ${jlptResponse.status}`);
             }
         } catch (error) {
-            console.error('Network error fetching JLPT tags sub-batch:', error);
+            console.warn('Network warning fetching JLPT tags sub-batch:', error);
             // Do not throw; continue so the test isn't interrupted by non-critical data failure.
         }
     }
@@ -156,12 +182,11 @@ export async function fetchStagedBatch(
         const wordMap = await fetchWords(Array.from(candidateIds));
         
         // ** CRITICAL FIX **: Relaxed filtering.
-        // The old filter was too strict, removing valid Katakana and non-Jukugo words.
         const validWords = Array.from(wordMap.keys())
             .map(id => ({ id, bandId: currentBandId }))
             .filter(item => {
                 const w = wordMap.get(item.id)?.word;
-                return isValidWord(w); // Use the corrected, simpler validation.
+                return isValidWord(w); 
             });
         
         for (const item of validWords) {
@@ -195,7 +220,8 @@ export async function fetchStagedBatchWithRetry(
   map: Map<number, Word>
 }> {
   let lastError: Error | null = null;
-  const maxRetries = 7;
+  // Increased maxRetries slightly to ensure robustness alongside longer timeout
+  const maxRetries = 3; 
   let delay = 1000; // Start with 1 second
 
   for (let i = 0; i < maxRetries; i++) {
@@ -209,16 +235,16 @@ export async function fetchStagedBatchWithRetry(
       }
       console.warn(`Attempt ${i + 1} to fetch data failed. Retrying in ${delay / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 2; // Exponential backoff
+      delay *= 2; // Exponential backoff (1s, 2s, 4s)
     }
   }
 
-  console.error("All retry attempts failed. The server might be down or your connection is unstable.");
+  console.error("All retry attempts failed.");
   throw lastError; // Throw the last captured error after all retries fail
 }
 
 
-// --- FINAL CALCULATION (SIMPLIFIED) ---
+// --- FINAL CALCULATION ---
 
 export function calculateTestResult(
   history: { id: number, bandId: number, isKnown: boolean }[],

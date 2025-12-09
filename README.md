@@ -1,24 +1,41 @@
-# Tes Frekuensi Kosakata Jepang
+# Tes Frekuensi Kosakata Jepang (JP Vocab Test)
 
-Aplikasi web untuk mengukur jangkauan kosakata bahasa Jepang Anda berdasarkan frekuensi kata dalam bahasa Jepang modern.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-5.0-646CFF.svg?logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg?logo=tailwind-css)
 
-Dibuat dengan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
+Aplikasi web modern untuk mengukur **jangkauan kosakata pasif bahasa Jepang** Anda secara akurat menggunakan data frekuensi korpus BCCWJ.
 
-## ✨ Live Demo
+🔗 **[Live Demo](https://jp-vocab-test.vercel.app)** *(Jangan lupa update link ini nanti)*
 
-[Silakan masukkan link demo Vercel Anda di sini setelah deploy]
+## 📖 Tentang Proyek
 
-## 🌟 Fitur Inti 
+Aplikasi ini menggunakan algoritma adaptif cerdas untuk mengestimasi ukuran kosakata bahasa Jepang Anda. Berbeda dengan tes JLPT biasa, sistem ini menguji berdasarkan lapisan frekuensi kata dari **BCCWJ (Balanced Corpus of Contemporary Written Japanese)**, memberikan gambaran nyata tentang kemampuan literasi Anda.
 
--   **Estimasi Kosakata Paling Akurat**: Menggunakan sistem tes adaptif yang cerdas, didukung oleh data frekuensi kata dari Balanced Corpus of Contemporary Written Japanese (BCCWJ), untuk memberikan perkiraan ukuran kosakata Jepang Anda yang paling tepat dan terukur.
--   **Sistem Tes Bertahap Otomatis**: Tes secara cerdas menyesuaikan tingkat kesulitan dan berhenti secara otomatis ketika batas kemampuan Anda terdeteksi.
--   **Analisis Komprehensif**: Mengukur **Jangkauan Optimal** (estimasi total kosakata yang diketahui) dan **Peta Kepadatan Pengetahuan** Anda di berbagai level frekuensi.
--   **Analisis Profil JLPT**: Memberikan gambaran kekuatan kosakata Anda sesuai level JLPT (N5-N1) melalui visualisasi Radar Chart.
--   **Sumber Data Akademis**: Menggunakan data dari BCCWJ (Balanced Corpus of Contemporary Written Japanese) untuk kualitas data frekuensi yang valid.
+## ✨ Fitur Utama
 
-## 🚀 Cara Menjalankan (Lokal)
+*   **⚡ Smart Adaptive Testing**: Level kesulitan menyesuaikan secara otomatis dan berhenti saat mencapai batas kemampuan pengguna.
+*   **📚 Data Valid**: Menggunakan data frekuensi dari 70.000 kata teratas di korpus BCCWJ.
+*   **📊 Analisis Visual Mendalam**:
+    *   **Radar Chart JLPT**: Estimasi kekuatan per level (N5-N1).
+    *   **Density Map**: Visualisasi kepadatan pengetahuan di setiap zona frekuensi.
+*   **🏎️ Performa Tinggi**: Dibangun dengan React 18, Vite, dan strategi *prefetching* (ref & queue) untuk interaksi instan tanpa loading.
+*   **📱 Responsif Penuh**: Tampilan optimal di Mobile dan Desktop.
 
-1.  **Clone repositori ini**
+## 🛠️ Teknologi
+
+*   **Frontend**: React 18, TypeScript
+*   **Styling**: Tailwind CSS
+*   **Build Tool**: Vite
+*   **Data**: Supabase (REST API)
+
+## 🚀 Cara Menjalankan (Development)
+
+Pastikan Anda sudah menginstall [Node.js](https://nodejs.org/).
+
+1.  **Clone Repositori**
     ```bash
     git clone https://github.com/philia-space/jp-vocab-test.git
     cd jp-vocab-test
@@ -29,27 +46,31 @@ Dibuat dengan **React**, **TypeScript**, **Vite**, dan **Tailwind CSS**.
     npm install
     ```
 
-3.  **Jalankan Development Server**
+3.  **Jalankan Server Lokal**
     ```bash
     npm run dev
     ```
     Buka `http://localhost:5173` di browser Anda.
 
-## 📦 Cara Deploy ke Vercel
+## 📂 Struktur Proyek
 
-1. Push kode ke repositori GitHub Anda.
-2. Buka [Vercel](https://vercel.com) dan buat Proyek Baru.
-3. Impor repositori GitHub.
-4. Vercel akan secara otomatis mendeteksi preset framework **Vite**.
-5. Klik **Deploy**.
+```
+src/
+├── components/     # Komponen UI (Card, Charts, Views)
+├── services/       # Logika API (Fetch, Retry, Timeout)
+├── constants.ts    # Konfigurasi Band & Parameter Tes
+├── types.ts        # Definisi TypeScript Interfaces
+└── App.tsx         # Logic Utama & State Management
+```
 
-## 🛠 Tumpukan Teknologi
+## 🤝 Berkontribusi
 
--   **Frontend**: React 18 + TypeScript
--   **Build Tool**: Vite
--   **Styling**: Tailwind CSS
--   **Database**: Supabase (via REST API)
+Kontribusi sangat diterima! Silakan fork repositori ini dan buat Pull Request.
 
-## 📝 Kredit
+## 📄 Lisensi
 
-[Philia Space Community](https://philiaspace.my.id/)
+Didistribusikan di bawah Lisensi MIT.
+
+## 💖 Kredit
+
+Dibuat dengan ❤️ oleh **[Philia Space Community](https://philiaspace.my.id/)**.

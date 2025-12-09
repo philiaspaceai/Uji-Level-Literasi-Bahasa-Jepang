@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppState, TestResult, Word } from './types';
 import { fetchStagedBatchWithRetry, calculateTestResult } from './services/vocabService';
@@ -21,6 +23,11 @@ export default function App() {
   // --- Smart Queue State ---
   const [displayQueue, setDisplayQueue] = useState<{ id: number, bandId: number }[]>([]);
   const [prefetchQueue, setPrefetchQueue] = useState<{ id: number, bandId: number }[]>([]);
+  
+  // Ref for Prefetch Queue to handle rapid interactions (Race Condition Fix)
+  const prefetchQueueRef = useRef<{ id: number, bandId: number }[]>([]);
+  // Ref to track which items are currently being processed to prevent double-clicks
+  const processingItemIdsRef = useRef<Set<number>>(new Set());
   
   const [wordMap, setWordMap] = useState<Map<number, Word>>(new Map());
   const [answersHistory, setAnswersHistory] = useState<{ id: number, bandId: number, isKnown: boolean }[]>([]);
@@ -90,6 +97,9 @@ export default function App() {
           1 // only fetch one for the buffer
         );
         if (newWords.length > 0) {
+            // Update Ref immediately for race-condition safety
+            prefetchQueueRef.current = [...prefetchQueueRef.current, ...newWords];
+            // Update State for UI
             setPrefetchQueue(prev => [...prev, ...newWords]);
             setWordMap(prev => new Map([...prev, ...newWordMap]));
         } else {
@@ -122,15 +132,21 @@ export default function App() {
         }
 
         setDisplayQueue(queue.slice(0, DISPLAY_SIZE));
-        setPrefetchQueue(queue.slice(DISPLAY_SIZE));
+        
+        // Init prefetch queue and ref
+        const initialPrefetch = queue.slice(DISPLAY_SIZE);
+        setPrefetchQueue(initialPrefetch);
+        prefetchQueueRef.current = initialPrefetch;
+
         setWordMap(prev => new Map([...prev, ...map]));
         setCurrentBandId(1);
         switchState('TEST');
     } catch (error) {
         console.error(error);
         setNetworkStatusMessage('');
-        setLoadingMsg('Gagal memuat. Coba lagi.');
-        setTimeout(() => switchState('WELCOME'), 2000);
+        // User friendly message for Supabase cold start or network issues
+        setLoadingMsg('Gagal terhubung. Server mungkin sedang tidur, coba lagi dalam beberapa detik.');
+        setTimeout(() => switchState('WELCOME'), 3500);
     } finally {
         isFetchingRef.current = false;
     }
@@ -142,25 +158,40 @@ export default function App() {
     setWordMap(new Map());
     setRefreshCounts({});
     setWordsAnsweredInBand({});
+    prefetchQueueRef.current = [];
+    processingItemIdsRef.current.clear();
     loadInitialQueues();
   };
 
   const handleAnswer = (itemId: number) => {
-    const itemInQueue = displayQueue.find(q => q.id === itemId);
-    if (!itemInQueue) return;
+    // 1. Anti-spam / Debounce check: Prevent double processing of the same card click
+    if (processingItemIdsRef.current.has(itemId)) return;
+    processingItemIdsRef.current.add(itemId);
 
-    // 1. Process the answer immediately
+    // 2. Get item info from current displayQueue closure (safe for different cards)
+    const itemInQueue = displayQueue.find(q => q.id === itemId);
+    if (!itemInQueue) {
+        processingItemIdsRef.current.delete(itemId);
+        return;
+    }
+
+    // 3. Process the answer
     setAnswersHistory(prev => [...prev, { ...itemInQueue, isKnown: true }]);
     
-    // 2. Check if prefetch buffer has a replacement
-    if (prefetchQueue.length === 0) {
+    // 4. Critical Section: Get replacement from Ref (synchronous source of truth)
+    const currentBuffer = prefetchQueueRef.current;
+    
+    if (currentBuffer.length === 0) {
         console.warn("Prefetch queue is empty. Ending test.");
         finishTest();
         return;
     }
     
-    // 3. Instant replacement from buffer
-    const nextWord = prefetchQueue[0];
+    // Pop immediately from Ref to reserve this word for THIS click event
+    const nextWord = currentBuffer[0];
+    prefetchQueueRef.current = currentBuffer.slice(1);
+    
+    // 5. Update UI States (asynchronous)
     setPrefetchQueue(prev => prev.slice(1));
     setDisplayQueue(prev => {
         const index = prev.findIndex(q => q.id === itemId);
@@ -169,7 +200,7 @@ export default function App() {
         return newQueue;
     });
 
-    // 4. Determine which band to fetch from for the buffer refill
+    // 6. Logic to determine band advancement
     const newCount = (wordsAnsweredInBand[currentBandId] || 0) + 1;
     setWordsAnsweredInBand(prev => ({ ...prev, [currentBandId]: newCount }));
     
@@ -180,8 +211,13 @@ export default function App() {
         bandToFetchFrom = nextBandId;
     }
     
-    // 5. Trigger buffer refill in the background
+    // 7. Trigger buffer refill in the background
     refillPrefetchQueue(bandToFetchFrom);
+
+    // 8. Cleanup processing lock after animation/render delay
+    setTimeout(() => {
+        processingItemIdsRef.current.delete(itemId);
+    }, 300);
   };
   
   const handleRefreshBatch = async () => {
@@ -215,17 +251,20 @@ export default function App() {
             finishTest();
         } else {
             setDisplayQueue(queue.slice(0, DISPLAY_SIZE));
-            setPrefetchQueue(queue.slice(DISPLAY_SIZE));
+            
+            // Sync Ref for refresh
+            const newPrefetch = queue.slice(DISPLAY_SIZE);
+            setPrefetchQueue(newPrefetch);
+            prefetchQueueRef.current = newPrefetch;
+            
             setWordMap(prev => new Map([...prev, ...map]));
         }
       } catch (e) {
         console.error("Failed to refresh batch", e);
         setNetworkStatusMessage('');
+        // If refresh fails due to network/timeout, we likely can't continue the test reliably.
         finishTest();
       } finally {
-        // Defer setting isRefreshing to false to the next event loop cycle.
-        // This ensures the DOM has a chance to update with the new words
-        // before the loading state is removed, preventing the UI from getting "stuck".
         setTimeout(() => setIsRefreshing(false), 0);
       }
     }
@@ -241,6 +280,8 @@ export default function App() {
         setRefreshCounts({});
         setWordsAnsweredInBand({});
         shownIdsRef.current.clear();
+        prefetchQueueRef.current = [];
+        processingItemIdsRef.current.clear();
     });
   };
 
